@@ -1,0 +1,129 @@
+(gdb) b phase_4
+Breakpoint 1 at 0x400ffa
+(gdb) r answer.txt
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /home/lab2/Desktop/12190060/CS1/Assignment 1/bomb003/bomb answer.txt
+Welcome to my fiendish little bomb. You have 6 phases with
+which to blow yourself up. Have a nice day!
+Phase 1 defused. How about the next one?
+0 1 1 2 3 5
+That's number 2.  Keep going!
+2 798
+Halfway there!
+1 9
+
+Breakpoint 1, 0x0000000000400ffa in phase_4 ()
+(gdb) disas phase_4
+Dump of assembler code for function phase_4:
+=> 0x0000000000400ffa <+0>:   sub    $0x18,%rsp          //makes a stack frame
+   0x0000000000400ffe <+4>:   mov    %fs:0x28,%rax
+   0x0000000000401007 <+13>:  mov    %rax,0x8(%rsp)
+   0x000000000040100c <+18>:  xor    %eax,%eax
+   0x000000000040100e <+20>:  lea    0x4(%rsp),%rcx      //Second input = %rcx
+   0x0000000000401013 <+25>:  mov    %rsp,%rdx     //First Input = %rdx
+   0x0000000000401016 <+28>:  mov    $0x4025af,%esi      //the expected input must be an integer: %d %d
+   0x000000000040101b <+33>:  call   0x400bb0 <__isoc99_sscanf@plt>
+   0x0000000000401020 <+38>:  cmp    $0x2,%eax                 //If value of %eax NOT equal to 2 then jump to explode bomb
+   0x0000000000401023 <+41>:  jne    0x40102b <phase_4+49>
+   0x0000000000401025 <+43>:  cmpl   $0xe,(%rsp)      //value of %rsp is compared to $0xe;e=14
+   0x0000000000401029 <+47>:  jbe    0x401030 <phase_4+54>  //if first input(%rsp) is < 14,jump to line<+54>,if not explode
+   0x000000000040102b <+49>:  call   0x40142a <explode_bomb>
+   0x0000000000401030 <+54>:  mov    $0xe,%edx     //%edx = 14
+   0x0000000000401035 <+59>:  mov    $0x0,%esi     //esi = 0
+   0x000000000040103a <+64>:  mov    (%rsp),%edi      //%edi = first input
+   0x000000000040103d <+67>:  call   0x400fbc <func4>    //calls <func4>
+   0x0000000000401042 <+72>:  cmp    $0x2,%eax     //compare value 2 with value of %eax 
+   0x0000000000401045 <+75>:  jne    0x40104e <phase_4+84>  //if value of %eax is  NOT equal to 2 jump to explode bomb
+   0x0000000000401047 <+77>:  cmpl   $0x2,0x4(%rsp)      
+   0x000000000040104c <+82>:  je     0x401053 <phase_4+89>  //if 2 == second input DONE if not explode
+   0x000000000040104e <+84>:  call   0x40142a <explode_bomb>
+--Type <RET> for more, q to quit, c to continue without paging--
+   0x0000000000401053 <+89>:  mov    0x8(%rsp),%rax
+   0x0000000000401058 <+94>:  xor    %fs:0x28,%rax
+   0x0000000000401061 <+103>: je     0x401068 <phase_4+110>
+   0x0000000000401063 <+105>: call   0x400b00 <__stack_chk_fail@plt>
+   0x0000000000401068 <+110>: add    $0x18,%rsp
+   0x000000000040106c <+114>: ret    
+End of assembler dump.
+
+//checiing what is being stored in (%rsp) at <+43> and in 
+(gdb) x/d $rsp
+0x7fffffffdea0:   1
+
+(gdb) x/d $rsp+4
+0x7fffffffdea4:   9
+
+From this, we know that $rsp holds our first input and $rsp+4 holds our second input. And as the code proceeds we come to know that the first input must be less than 14 or esle it explodes.
+
+We have to compare %eax from <func4>. To get inside the fun4 we write si(stepinto)
+result = %rax, ecx = t1; first input = %edi, edx is 14 when passed in, %esi = 0
+
+(gdb) u *0x000000000040103d         //execute instruction until it reaches to that particular address.
+0x000000000040103d in phase_4 ()
+(gdb) disas
+Dump of assembler code for function phase_4:
+   0x0000000000400ffa <+0>:   sub    $0x18,%rsp
+   0x0000000000400ffe <+4>:   mov    %fs:0x28,%rax
+   0x0000000000401007 <+13>:  mov    %rax,0x8(%rsp)
+   0x000000000040100c <+18>:  xor    %eax,%eax
+   0x000000000040100e <+20>:  lea    0x4(%rsp),%rcx
+   0x0000000000401013 <+25>:  mov    %rsp,%rdx
+   0x0000000000401016 <+28>:  mov    $0x4025af,%esi
+   0x000000000040101b <+33>:  call   0x400bb0 <__isoc99_sscanf@plt>
+   0x0000000000401020 <+38>:  cmp    $0x2,%eax
+   0x0000000000401023 <+41>:  jne    0x40102b <phase_4+49>
+   0x0000000000401025 <+43>:  cmpl   $0xe,(%rsp)
+   0x0000000000401029 <+47>:  jbe    0x401030 <phase_4+54>
+   0x000000000040102b <+49>:  call   0x40142a <explode_bomb>
+   0x0000000000401030 <+54>:  mov    $0xe,%edx
+   0x0000000000401035 <+59>:  mov    $0x0,%esi
+   0x000000000040103a <+64>:  mov    (%rsp),%edi
+=> 0x000000000040103d <+67>:  call   0x400fbc <func4>
+   0x0000000000401042 <+72>:  cmp    $0x2,%eax
+   0x0000000000401045 <+75>:  jne    0x40104e <phase_4+84>
+   0x0000000000401047 <+77>:  cmpl   $0x2,0x4(%rsp)
+   0x000000000040104c <+82>:  je     0x401053 <phase_4+89>
+   0x000000000040104e <+84>:  call   0x40142a <explode_bomb>
+   0x0000000000401053 <+89>:  mov    0x8(%rsp),%rax
+   0x0000000000401058 <+94>:  xor    %fs:0x28,%rax
+   0x0000000000401061 <+103>: je     0x401068 <phase_4+110>
+   0x0000000000401063 <+105>: call   0x400b00 <__stack_chk_fail@plt>
+   0x0000000000401068 <+110>: add    $0x18,%rsp
+   0x000000000040106c <+114>: ret    
+End of assembler dump.
+(gdb) si             //stepping into the function 
+0x0000000000400fbc in func4 ()
+(gdb) disas
+Dump of assembler code for function func4:         //Assembly code of the <func4>
+=> 0x0000000000400fbc <+0>:   sub    $0x8,%rsp     //makes stack frame
+   0x0000000000400fc0 <+4>:   mov    %edx,%eax     //eax = 14
+   0x0000000000400fc2 <+6>:   sub    %esi,%eax     //eax = eax - esi; eax = 14-0 ----> 14
+   0x0000000000400fc4 <+8>:   mov    %eax,%ecx     //ecx = 14
+   0x0000000000400fc6 <+10>:  shr    $0x1f,%ecx    //0x1f = 31; ecx = 14 >>31; returns most sigfig bit --->0
+   0x0000000000400fc9 <+13>:  add    %ecx,%eax     //eax = eax + ecx; eax = 14 + 0 = 14
+   0x0000000000400fcb <+15>:  sar    %eax       //eax = eax >> 1; 14 >> 1 --> same as eax/2
+   0x0000000000400fcd <+17>:  lea    (%rax,%rsi,1),%ecx  //ecx = eax + rsi ---> ecx = 7
+   
+   0x0000000000400fd0 <+20>:  cmp    %edi,%ecx     //first input Vs ecx
+   0x0000000000400fd2 <+22>:  jle    0x400fe0 <func4+36> //if 7 <= first input, jump pass recursion call
+   0x0000000000400fd4 <+24>:  lea    -0x1(%rcx),%edx     //edx = rcx - 1
+   0x0000000000400fd7 <+27>:  call   0x400fbc <func4>    //back to beginning
+   
+   0x0000000000400fdc <+32>:  add    %eax,%eax     //eax = eax + eax
+   0x0000000000400fde <+34>:  jmp    0x400ff5 <func4+57>
+   
+   0x0000000000400fe0 <+36>:  mov    $0x0,%eax     //eax = 0   
+   0x0000000000400fe5 <+41>:  cmp    %edi,%ecx     //ecx = 7; first input Vs 7
+   0x0000000000400fe7 <+43>:  jge    0x400ff5 <func4+57> //%eax >= edi --> 7 >= first input
+   
+   0x0000000000400fe9 <+45>:  lea    0x1(%rcx),%esi   //%esi = 1 + %rcx --> %esi = 1 + 7 = 8, we are incrementing rcx each time
+   0x0000000000400fec <+48>:  call   0x400fbc <func4> //Goes back to beginning
+   0x0000000000400ff1 <+53>:  lea    0x1(%rax,%rax,1),%eax
+   
+   0x0000000000400ff5 <+57>:  add    $0x8,%rsp        //We are returning back eax which we want to be 4
+   0x0000000000400ff9 <+61>:  ret    
+End of assembler dump.
+//Solution
+in this problem it involves recursion and we know that our first input must be less than 14 and also that the last imput be 2.
+so the format of the desired input is "x 2". Trying with input 4 and 2 works absolutely fine.
