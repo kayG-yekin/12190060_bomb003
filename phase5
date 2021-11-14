@@ -1,0 +1,85 @@
+gdb bomb										//gdb debugger executes the assembly code
+ 
+  (gdb) b phase_5									//breakpoint is set at phase 5 so that it doesnt explode on wrong input
+  
+  (gdb) r result.txt									//run the program using result.txt
+  Starting program: /home/yang/Desktop/ITS304 CS1/Assignment_1/bomb003/bomb result.txt
+  Welcome to my fiendish little bomb. You have 6 phases with
+  which to blow yourself up. Have a nice day!
+  Phase 1 defused. How about the next one?
+  0 1 1 2 3 5
+  That's number 2.  Keep going!
+  2 798
+  Halfway there!
+  4 2
+  So you got that one.  Try this one.
+  5 4
+
+  Breakpoint 1, 0x000000000040106d in phase_5 ()
+  
+  (gdb) disas phase_5									//opens assembly file
+  Dump of assembler code for function phase_5:
+=> 0x000000000040106d <+0>:	sub    $0x18,%rsp					//creates strack frame
+   0x0000000000401071 <+4>:	mov    %fs:0x28,%rax
+   0x000000000040107a <+13>:	mov    %rax,0x8(%rsp)
+   0x000000000040107f <+18>:	xor    %eax,%eax
+   0x0000000000401081 <+20>:	lea    0x4(%rsp),%rcx
+   0x0000000000401086 <+25>:	mov    %rsp,%rdx
+   0x0000000000401089 <+28>:	mov    $0x4025af,%esi					//format of input: %d %d
+   0x000000000040108e <+33>:	callq  0x400bb0 <__isoc99_sscanf@plt>			//scan input
+   0x0000000000401093 <+38>:	cmp    $0x1,%eax					//checks whether there is two input numbers
+   0x0000000000401096 <+41>:	jg     0x40109d <phase_5+48>				//since 2 > 1, it skips the explode bomb
+   0x0000000000401098 <+43>:	callq  0x40142a <explode_bomb>
+   0x000000000040109d <+48>:	mov    (%rsp),%eax					//eax = first input number (5)
+   0x00000000004010a0 <+51>:	and    $0xf,%eax					
+   0x00000000004010a3 <+54>:	mov    %eax,(%rsp)					
+   0x00000000004010a6 <+57>:	cmp    $0xf,%eax					//compare first number and 0xf (15)
+   0x00000000004010a9 <+60>:	je     0x4010da <phase_5+109>				//If first number = 15, bomb explodes
+   0x00000000004010ab <+62>:	mov    $0x0,%ecx					//ecx = 0
+   0x00000000004010b0 <+67>:	mov    $0x0,%edx					//edx = 1
+   0x00000000004010b5 <+72>:	add    $0x1,%edx					//edx = edx + 1 (value of edx is incremented)
+   0x00000000004010b8 <+75>:	cltq   
+   0x00000000004010ba <+77>:	mov    0x402460(,%rax,4),%eax				//moves the element in array of address 0x402460+rax*4 to eax
+   0x00000000004010c1 <+84>:	add    %eax,%ecx					//adds the elements present in the array
+   0x00000000004010c3 <+86>:	cmp    $0xf,%eax					//checks if eax value is 15
+   0x00000000004010c6 <+89>:	jne    0x4010b5 <phase_5+72>				//If equal, terminate from loop. If not equal, iterate again till it becomes 15. 
+   0x00000000004010c8 <+91>:	movl   $0xf,(%rsp)					//rsp = 15
+   0x00000000004010cf <+98>:	cmp    $0xf,%edx					//checks if the iteration has repeated 15 times or else, bomb explodes
+   0x00000000004010d2 <+101>:	jne    0x4010da <phase_5+109>
+   0x00000000004010d4 <+103>:	cmp    0x4(%rsp),%ecx					//checks if second number = the sum of the element in the array in ecx (5 is not included)
+   0x00000000004010d8 <+107>:	je     0x4010df <phase_5+114>
+   0x00000000004010da <+109>:	callq  0x40142a <explode_bomb>
+   0x00000000004010df <+114>:	mov    0x8(%rsp),%rax
+   0x00000000004010e4 <+119>:	xor    %fs:0x28,%rax
+   0x00000000004010ed <+128>:	je     0x4010f4 <phase_5+135>
+   0x00000000004010ef <+130>:	callq  0x400b00 <__stack_chk_fail@plt>
+   0x00000000004010f4 <+135>:	add    $0x18,%rsp
+--Type <RET> for more, q to quit, c to continue without paging--
+   0x00000000004010f8 <+139>:	retq   
+  End of assembler dump.
+
+  (gdb) x/s 0x4025af									//takes two numbers as input
+  0x4025af:	"%d %d"
+  
+  (gdb) r result.txt
+  The program being debugged has been started already.
+  Start it from the beginning? (y or n) y
+  Starting program: /home/yang/Desktop/ITS304 CS1/Assignment_1/bomb003/bomb result.txt
+  Welcome to my fiendish little bomb. You have 6 phases with
+  which to blow yourself up. Have a nice day!
+  Phase 1 defused. How about the next one?
+  0 1 1 2 3 5
+  That's number 2.  Keep going!
+  2 798
+  Halfway there!
+  4 2
+  So you got that one.  Try this one.
+  5 115											//bomb at phase_5 is defused 
+  Good work!  On to the next...
+
+  Description:
+  Phase 5 is about giving two input numbers.
+  To get the first input, the first input is compared with 15 and based on the first input, it loops in the code till the value generates 15. 
+  After that, it jumps out of the loop and compares the generated value with 15. From here, the first number 5 is generated. 
+  Based on the first number, the second number is calculated and then generated which is 115.
+  The numbers used for defusing phase 5 of bomb 003 are "5 115". 
